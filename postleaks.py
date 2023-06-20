@@ -52,7 +52,7 @@ def search(keyword: str, extend_workspaces: bool, raw: bool):
         print(GREEN+str(request_infos)+NOCOLOR)
     else:
         for r in request_infos:
-            if r["url"] is not None:
+            if "url" in r and r["url"] is not None:
                 print(GREEN+"[+] URL ("+ r["method"] +"): "+repr(r["url"]) + NOCOLOR, end = '')
                 print(YELLOW, end='')
                 if r["auth"] is not None:
@@ -66,7 +66,8 @@ def search(keyword: str, extend_workspaces: bool, raw: bool):
                 if r["data"] is not None and len(r["data"]) != 0:
                     print("\n - Misc. data items: ", end='')
                     for d in r["data"]:
-                        print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
+                        if "key" in d:
+                            print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
                 
                 if r["queryParams"] is not None and len(r["queryParams"]) != 0:
                     print("\n - Query parameters: ", end='')
@@ -76,7 +77,7 @@ def search(keyword: str, extend_workspaces: bool, raw: bool):
                 print(NOCOLOR)
     print(NOCOLOR)
 
-    print(BLUE+"\n[*]"+str(len(request_infos))+" results founds. Happy (ethical) hacking!"+NOCOLOR)
+    print(BLUE+"\n[*] "+str(len(request_infos))+" results founds. Happy (ethical) hacking!"+NOCOLOR)
 
 def search_request_info_for_request_ids(ids: set):
     print(BLUE+"[*] Search for requests info in collection of requests"+NOCOLOR)
@@ -88,12 +89,16 @@ def search_request_info_for_request_ids(ids: set):
     session = requests.Session()
     for id in ids:
         response = session.get(POSTMAN_HOST+GET_REQUEST_ENDPOINT+str(id))
-        data = response.json()["data"]
         
         request_info = {}
-        for key, value in data.items():
-            if key in REQUEST_INFO_INTERESTING_DATA:
-                request_info[key] = value
+
+        if "data" in response.json():
+            data = response.json()["data"]
+            
+            
+            for key, value in data.items():
+                if key in REQUEST_INFO_INTERESTING_DATA:
+                    request_info[key] = value
         request_infos.append(request_info)
         
     return request_infos
@@ -148,6 +153,10 @@ def search_requests_ids(keyword: str):
 def parse_search_response(search_response):
 
     json = search_response.json()
+    
+    if "data" not in json:
+        fail("No data found")
+    
     data = json["data"]
 
     # List composed of {"<requestId>":["workspaceId", ...]}
