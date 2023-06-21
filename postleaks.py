@@ -104,7 +104,6 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
                     if key in REQUEST_INFO_INTERESTING_DATA:
                         # URL filtering
                         if key == "url" and len(value) > 0 and (include_match is not None or exclude_match is not None):
-                            print(value)
                             if (include_match is not None and include_match.lower() not in value.lower()):
                                 raise StopIteration
                             if (exclude_match is not None and exclude_match.lower() in value.lower()):
