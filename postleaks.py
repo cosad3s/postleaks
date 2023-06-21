@@ -103,7 +103,7 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
                 for key, value in data.items():
                     if key in REQUEST_INFO_INTERESTING_DATA:
                         # URL filtering
-                        if key == "url" and len(value) > 0 and (include_match is not None or exclude_match is not None):
+                        if key == "url" and value is not None and len(value) > 0 and (include_match is not None or exclude_match is not None):
                             if (include_match is not None and include_match.lower() not in value.lower()):
                                 raise StopIteration
                             if (exclude_match is not None and exclude_match.lower() in value.lower()):
@@ -127,21 +127,24 @@ def search_request_ids_for_workspaces_id(ids: set):
     session = requests.Session()
     for id in ids:
         response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
-        request_ids = request_ids.union(parse_search_requests_from_workspace_response(response))
+        new_request_ids = parse_search_requests_from_workspace_response(response)
+        if new_request_ids is not None:
+            request_ids = request_ids.union(new_request_ids)
 
     return request_ids
 
 def parse_search_requests_from_workspace_response(list_collection_response):
     json = list_collection_response.json()
-    data = json["data"]
-    
-    request_ids = set()
-    for d in data:
-        requests_raw = d["requests"]
-        for r in requests_raw:
-            request_ids.add(r["id"])
+    if "data" in json:
+        data = json["data"]
+        
+        request_ids = set()
+        for d in data:
+            requests_raw = d["requests"]
+            for r in requests_raw:
+                request_ids.add(r["id"])
 
-    return request_ids
+        return request_ids
 
 def search_requests_ids(keyword: str):
     print(BLUE+"[*] Searching for requests IDs"+NOCOLOR)
