@@ -35,7 +35,8 @@ options:
   --include INCLUDE    URL should match this string
   --exclude EXCLUDE    URL should not match this string
   --raw                Display raw filtered results as JSON
-  --output OUTPUT      Store JSON in specific output folder (Default: results_<TIMESTAMP>)```
+  --output OUTPUT      Store JSON in specific output folder (Default: results_<TIMESTAMP>)
+```
 
 *The results are available in `results_<TIMESTAMP>` subfolder. The filename is the request identifier in Postman.com*
 
