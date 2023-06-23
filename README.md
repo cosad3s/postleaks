@@ -26,7 +26,7 @@ pip3 install .
 ❯ postleaks -h
 usage: postleaks [-h] -k KEYWORD [--extend-workspaces] [--include INCLUDE] [--exclude EXCLUDE] [--raw] [--output OUTPUT]
 
-Postleaks
+Postleaks 🚀💧 Search for sensitive data in Postman public library.
 
 options:
   -h, --help           show this help message and exit
