@@ -8,11 +8,23 @@
 It proposes also public API assets built by them which can contains custom endpoints and data. Unfortunately, these items can leak sensitive data about private websites and companies.  
 This script is aimed to search for these pieces of information in Postman public library.
 
+## Installation
+
+```bash
+pip3 install postleaks
+```
+
+or 
+
+```bash
+pip3 install .
+```
+
 ## Usage
 
 ```bash
-❯ python3 ./postleaks.py -h
-usage: postleaks.py [-h] -k KEYWORD [--extend-workspaces] [--include INCLUDE] [--exclude EXCLUDE] [--raw]
+❯ postleaks -h
+usage: postleaks [-h] -k KEYWORD [--extend-workspaces] [--include INCLUDE] [--exclude EXCLUDE] [--raw] [--output OUTPUT]
 
 Postleaks
 
@@ -23,8 +35,14 @@ options:
   --include INCLUDE    URL should match this string
   --exclude EXCLUDE    URL should not match this string
   --raw                Display raw filtered results as JSON
-```
+  --output OUTPUT      Store JSON in specific output folder (Default: results_<TIMESTAMP>)```
+
+*The results are available in `results_<TIMESTAMP>` subfolder. The filename is the request identifier in Postman.com*
 
 ## Example
 
 ![](assets/example.png)
+
+## Notes
+
+Secret detection is done with [whispers](https://github.com/adeptex/whispers). Rules are stored in `config.yml` file.

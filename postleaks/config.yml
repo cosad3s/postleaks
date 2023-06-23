@@ -1,0 +1,31 @@
+# Whispers custom rules
+# https://github.com/adeptex/whispers
+include:
+  rules:
+    - apikey
+    - apikey-known
+    - aws-account
+    - aws-id
+    - aws-secret
+    - aws-token
+    - privatekey
+    - secret
+    - webhook
+    - password
+    - uri
+    - id: oauth
+      message: OAuth
+      severity: MAJOR
+      group: passwords
+      key:
+        regex: .*(client_id|client_secret).*$
+        ignorecase: True
+    - id: authorizations
+      message: Authorization token
+      severity: MAJOR
+      group: keys
+      key:
+        regex: .*(token|bearer|basic).*$
+        ignorecase: true
+      value:
+        minlen: 3

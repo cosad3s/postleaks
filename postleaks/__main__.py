@@ -5,12 +5,19 @@ import argparse
 import requests
 import sys
 import math
+import json
+import os
+from datetime import datetime
+import whispers
+
+#from postleaks.config.regex_config import _regex, _domain_to_delete
 
 POSTMAN_HOST = "https://www.postman.com"
 
 REQUEST_INFO_INTERESTING_DATA = ["id", "url", "method", "auth", "queryParams", "description", "name", "events", "data", "headerData"]
+DEFAULT_OUTPUT_FOLDERNAME="results_"
 
-RED='\033[91m'
+ORANGE='\033[0;35m'
 GREEN='\033[92m'
 BLUE='\033[94m'
 YELLOW='\033[33m'
@@ -18,18 +25,27 @@ BOLD='\033[1m'
 NOCOLOR='\033[0m'
 
 def main():
-    parser = argparse.ArgumentParser(description='Postleaks')
+    parser = argparse.ArgumentParser(description=BOLD+'Postleaks 🚀💧'+NOCOLOR+" Search for sensitive data in Postman public library.")
     parser.add_argument('-k', type=str, required=True, dest='keyword', help = "Keyword (Domain, company, etc.)")
     parser.add_argument('--extend-workspaces', action="store_true", default=False, required=False, dest='extend_workspaces', help = "Extend search to Postman workspaces linked to found requests (Warning: request consuming and risk of false positive)")
     parser.add_argument('--include', type=str, required=False, dest='include', help = "URL should match this string")
     parser.add_argument('--exclude', type=str, required=False, dest='exclude', help = "URL should not match this string")
     parser.add_argument('--raw', action="store_true", default=False, required=False, dest='raw', help = "Display raw filtered results as JSON")
+    parser.add_argument('--output', type=str, required=False, dest='output', help = "Store JSON in specific output folder (Default: results_<TIMESTAMP>)")
     args = parser.parse_args()
 
-    request_infos = search(args.keyword, args.include, args.exclude, args.extend_workspaces)
-    display_results(request_infos, args.raw)
+    output_folder = ""
+    if args.output and len(args.output.strip()) >0:
+        output_folder = args.output
+    else:
+        timestamp = datetime.now().timestamp()
+        timestamp_str = str(int(timestamp))
+        output_folder = DEFAULT_OUTPUT_FOLDERNAME + timestamp_str;
+
+    request_infos = search(args.keyword, args.include, args.exclude, args.extend_workspaces, args.raw, output_folder)
+    print(BLUE+"\n[*] "+str(len(request_infos))+" results founds. Happy (ethical) hacking!"+NOCOLOR)
     
-def search(keyword: str, include_match:str, exclude_match:str, extend_workspaces: bool):
+def search(keyword: str, include_match:str, exclude_match:str, extend_workspaces: bool, raw: bool, output: str):
  
     print(BLUE+"[*] Looking for data in Postman.com")
     ids = search_requests_ids(keyword)
@@ -50,41 +66,38 @@ def search(keyword: str, include_match:str, exclude_match:str, extend_workspaces
         new_request_ids = search_request_ids_for_workspaces_id(workspaces_ids)
         request_ids = request_ids.union(new_request_ids)
 
-    return search_request_info_for_request_ids(request_ids, include_match, exclude_match)
+    return search_request_info_for_request_ids(request_ids, include_match, exclude_match, raw, output)
 
-def display_results(request_infos:list, raw:bool):
+def display(request_info:any, raw:bool):
     if raw:
-        print(GREEN+str(request_infos)+NOCOLOR)
+        print(GREEN+str(request_info)+NOCOLOR)
     else:
-        for r in request_infos:
-            print(GREEN+"[+] (ID:" + r["id"] + ") "+ r["method"] +": "+BOLD+repr(r["url"]) + NOCOLOR, end = '')
-            print(YELLOW, end='')
-            if r["auth"] is not None:
-                print("\n - Authentication items: " + repr(r["auth"]), end='')
-            
-            if r["headerData"] is not None and len(r["headerData"]) != 0:
-                print("\n - Headers: ", end='')
-                for d in r["headerData"]:
-                    print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
+        print(GREEN+"[+] (ID:" + request_info["id"] + ") "+ request_info["method"] +": "+BOLD+repr(request_info["url"]) + NOCOLOR, end = '')
+        print(YELLOW, end='')
+        if request_info["auth"] is not None:
+            print("\n - Authentication items: " + repr(request_info["auth"]), end='')
+        
+        if request_info["headerData"] is not None and len(request_info["headerData"]) != 0:
+            print("\n - Headers: ", end='')
+            for d in request_info["headerData"]:
+                print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
 
-            if r["data"] is not None and len(r["data"]) != 0:
-                print("\n - Misc. data items: ", end='')
-                for d in r["data"]:
-                    if "key" in d:
-                        print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
-            
-            if r["queryParams"] is not None and len(r["queryParams"]) != 0:
-                print("\n - Query parameters: ", end='')
-                for d in r["queryParams"]:
+        if request_info["data"] is not None and len(request_info["data"]) != 0:
+            print("\n - Misc. data items: ", end='')
+            for d in request_info["data"]:
+                if "key" in d:
                     print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
-
-            print(NOCOLOR)
+        
+        if request_info["queryParams"] is not None and len(request_info["queryParams"]) != 0:
+            print("\n - Query parameters: ", end='')
+            for d in request_info["queryParams"]:
+                print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
     print(NOCOLOR)
 
-    print(BLUE+"\n[*] "+str(len(request_infos))+" results founds. Happy (ethical) hacking!"+NOCOLOR)
-
-def search_request_info_for_request_ids(ids: set, include_match:str, exclude_match:str):
+def search_request_info_for_request_ids(ids: set, include_match:str, exclude_match:str, raw: bool, output: str):
     print(BLUE+"[*] Search for requests info in collection of requests"+NOCOLOR)
+
+    os.makedirs(output)
 
     GET_REQUEST_ENDPOINT="/_api/request/"
 
@@ -114,8 +127,24 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
             else:
                 if "url" in request_info:
                     request_infos.append(request_info)
+                    display(request_info, raw)
+                    f = store(request_info, output)
+                    identify_secrets(f)
         
     return request_infos
+
+def identify_secrets(file_path: any):
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yml')
+    for secret in whispers.secrets(f"-c {config_path} {file_path}"):
+        secret_str = str(secret).split(']', 1)[1].strip()
+        print(ORANGE+" > Potential secret found: " + secret_str + NOCOLOR)
+
+def store(request_info: any, output: str):
+    file_path = output + "/" + request_info["id"] + ".json"
+    json_string = json.dumps(request_info)
+    with open(file_path, 'w') as file:
+        file.write(json_string)
+    return file_path
 
 def search_request_ids_for_workspaces_id(ids: set):
     print(BLUE+"[*] Looking for requests IDs in collection of workspaces"+NOCOLOR)
