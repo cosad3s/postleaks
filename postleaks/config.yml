@@ -8,8 +8,18 @@ include:
     - aws-id
     - aws-secret
     - aws-token
+    - creditcard
+    - comment
+    - cors
+    - dockercfg
+    - file-known
+    - pip
     - privatekey
+    - npmrc
+    - htpasswd
+    - pypirc
     - secret
+    - system
     - webhook
     - password
     - uri

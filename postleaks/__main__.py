@@ -84,9 +84,14 @@ def display(request_info:any, raw:bool):
 
         if request_info["data"] is not None and len(request_info["data"]) != 0:
             print("\n - Misc. data items: ", end='')
-            for d in request_info["data"]:
-                if "key" in d:
-                    print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
+            for data in request_info["data"]:
+                if isinstance(data,dict):
+                    print("[" + data['key'] + "=" + repr(data['value']) + "]", end='')
+                elif data.startswith("["):
+                    tmp = json.loads(data)
+                    for d in tmp:
+                        if len(d['key']) != 0:
+                            print("[" + d['key'] + "=" + repr(d['value']) + "]", end='')
         
         if request_info["queryParams"] is not None and len(request_info["queryParams"]) != 0:
             print("\n - Query parameters: ", end='')
@@ -135,9 +140,11 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
 
 def identify_secrets(file_path: any):
     config_path = os.path.join(os.path.dirname(__file__), 'config.yml')
-    for secret in whispers.secrets(f"-c {config_path} {file_path}"):
-        secret_str = str(secret).split(']', 1)[1].strip()
-        print(ORANGE+" > Potential secret found: " + secret_str + NOCOLOR)
+    secrets_raw = list(whispers.secrets(f"-c {config_path} {file_path}"))
+    if (len(secrets_raw) > 0):
+        secrets=list(set(s.key+" = "+s.value for s in secrets_raw))
+        for secret in secrets:
+            print(ORANGE+" > Potential secret found: " + secret + NOCOLOR)
 
 def store(request_info: any, output: str):
     file_path = output + "/" + request_info["id"] + ".json"
