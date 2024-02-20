@@ -44,6 +44,10 @@ options:
 
 ![](assets/example.png)
 
+## Limitations
+
+**Postman.com is limiting the results to 300 items (page size of 100 / offset of 200).**
+
 ## Notes
 
 Secret detection is done with [whispers](https://github.com/adeptex/whispers). Rules are stored in `config.yml` file.

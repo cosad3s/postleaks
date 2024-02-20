@@ -10,8 +10,6 @@ import os
 from datetime import datetime
 import whispers
 
-#from postleaks.config.regex_config import _regex, _domain_to_delete
-
 POSTMAN_HOST = "https://www.postman.com"
 
 REQUEST_INFO_INTERESTING_DATA = ["id", "url", "method", "auth", "queryParams", "description", "name", "events", "data", "headerData"]
@@ -111,6 +109,8 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
     session = requests.Session()
     for id in ids:
         response = session.get(POSTMAN_HOST+GET_REQUEST_ENDPOINT+str(id))
+        if (response.status_code != 200):
+            fail("Error in [search_request_info_for_request_ids] on returned results from Postman.com.")
         
         request_info = {}
 
@@ -163,6 +163,8 @@ def search_request_ids_for_workspaces_id(ids: set):
     session = requests.Session()
     for id in ids:
         response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
+        if (response.status_code != 200):
+            fail("Error in [search_request_ids_for_workspaces_id] on returned results from Postman.com.")
         new_request_ids = parse_search_requests_from_workspace_response(response)
         if new_request_ids is not None:
             request_ids = request_ids.union(new_request_ids)
@@ -185,11 +187,16 @@ def parse_search_requests_from_workspace_response(list_collection_response):
 def search_requests_ids(keyword: str):
     print(BLUE+"[*] Searching for requests IDs"+NOCOLOR)
 
+    # https://www.postman.com/_api/ws/proxy limitation on results (<= 100)
     MAX_SEARCH_RESULTS = 100
+    # https://www.postman.com/_api/ws/proxy limitation on offset (<= 200)
+    MAX_OFFSET = 200
     GLOBAL_SEARCH_ENDPOINT="/_api/ws/proxy"
 
     session = requests.Session()
     response = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, 0, MAX_SEARCH_RESULTS))
+    if (response.status_code != 200):
+        fail("Error in [search_requests_ids] on returned results from Postman.com.")
     count = response.json()["meta"]["total"]["request"]
     
     ids = parse_search_response(response)
@@ -198,7 +205,12 @@ def search_requests_ids(keyword: str):
         max_requests = math.trunc(count / MAX_SEARCH_RESULTS)
         for i in range(1, max_requests+1):
             offset = i*MAX_SEARCH_RESULTS
+            
+            if offset > MAX_OFFSET:
+                break
             r = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, offset, MAX_SEARCH_RESULTS))
+            if (r.status_code != 200):
+                fail("Error in [search_requests_ids](loop) on returned results from Postman.com.")
             parsed = parse_search_response(r)
             ids.extend(parsed)
     return ids
