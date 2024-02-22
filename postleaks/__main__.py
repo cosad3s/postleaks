@@ -25,7 +25,8 @@ NOCOLOR='\033[0m'
 def main():
     parser = argparse.ArgumentParser(description=BOLD+'Postleaks 🚀💧'+NOCOLOR+" Search for sensitive data in Postman public library.")
     parser.add_argument('-k', type=str, required=True, dest='keyword', help = "Keyword (Domain, company, etc.)")
-    parser.add_argument('--extend-workspaces', action="store_true", default=False, required=False, dest='extend_workspaces', help = "Extend search to Postman workspaces linked to found requests (Warning: request consuming and risk of false positive)")
+    parser.add_argument('--extend-workspaces', action="store_true", default=False, required=False, dest='extend_workspaces', help = "Extend search to Postman workspaces linked to found requests (warning: request consuming and risk of false positive)")
+    parser.add_argument('--strict', action="store_true", default=False, required=False, dest='strict', help = "Only include results where keywords are in the URL (warning: could miss some results where the final URL is a variable)")
     parser.add_argument('--include', type=str, required=False, dest='include', help = "URL should match this string")
     parser.add_argument('--exclude', type=str, required=False, dest='exclude', help = "URL should not match this string")
     parser.add_argument('--raw', action="store_true", default=False, required=False, dest='raw', help = "Display raw filtered results as JSON")
@@ -40,10 +41,10 @@ def main():
         timestamp_str = str(int(timestamp))
         output_folder = DEFAULT_OUTPUT_FOLDERNAME + timestamp_str;
 
-    request_infos = search(args.keyword, args.include, args.exclude, args.extend_workspaces, args.raw, output_folder)
+    request_infos = search(args.keyword, args.include, args.exclude, args.extend_workspaces, args.raw, args.strict, output_folder)
     print(BLUE+"\n[*] "+str(len(request_infos))+" results founds. Happy (ethical) hacking!"+NOCOLOR)
     
-def search(keyword: str, include_match:str, exclude_match:str, extend_workspaces: bool, raw: bool, output: str):
+def search(keyword: str, include_match:str, exclude_match:str, extend_workspaces: bool, raw: bool, strict: bool, output: str):
  
     print(BLUE+"[*] Looking for data in Postman.com")
     ids = search_requests_ids(keyword)
@@ -64,7 +65,7 @@ def search(keyword: str, include_match:str, exclude_match:str, extend_workspaces
         new_request_ids = search_request_ids_for_workspaces_id(workspaces_ids)
         request_ids = request_ids.union(new_request_ids)
 
-    return search_request_info_for_request_ids(request_ids, include_match, exclude_match, raw, output)
+    return search_request_info_for_request_ids(request_ids, include_match, exclude_match, raw, strict, keyword, output)
 
 def display(request_info:any, raw:bool):
     if raw:
@@ -97,7 +98,7 @@ def display(request_info:any, raw:bool):
                 print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
     print(NOCOLOR)
 
-def search_request_info_for_request_ids(ids: set, include_match:str, exclude_match:str, raw: bool, output: str):
+def search_request_info_for_request_ids(ids: set, include_match:str, exclude_match:str, raw: bool, strict: bool, keyword:str, output: str):
     print(BLUE+"[*] Search for requests info in collection of requests"+NOCOLOR)
 
     os.makedirs(output)
@@ -110,7 +111,8 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
     for id in ids:
         response = session.get(POSTMAN_HOST+GET_REQUEST_ENDPOINT+str(id))
         if (response.status_code != 200):
-            fail("Error in [search_request_info_for_request_ids] on returned results from Postman.com.")
+            # Request details not found - Skip
+            continue
         
         request_info = {}
 
@@ -121,11 +123,15 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
                 for key, value in data.items():
                     if key in REQUEST_INFO_INTERESTING_DATA:
                         # URL filtering
-                        if key == "url" and value is not None and len(value) > 0 and (include_match is not None or exclude_match is not None):
-                            if (include_match is not None and include_match.lower() not in value.lower()):
-                                raise StopIteration
-                            if (exclude_match is not None and exclude_match.lower() in value.lower()):
-                                raise StopIteration
+                        if key == "url" and value is not None and len(value) > 0:
+                            if (include_match is not None or exclude_match is not None):
+                                if (include_match is not None and include_match.lower() not in value.lower()):
+                                    raise StopIteration
+                                if (exclude_match is not None and exclude_match.lower() in value.lower()):
+                                    raise StopIteration
+                            if strict:
+                                if (keyword.lower() not in value.lower()):
+                                    raise StopIteration
                         request_info[key] = value
             except StopIteration:
                 continue

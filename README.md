@@ -24,14 +24,15 @@ pip3 install .
 
 ```bash
 ❯ postleaks -h
-usage: postleaks [-h] -k KEYWORD [--extend-workspaces] [--include INCLUDE] [--exclude EXCLUDE] [--raw] [--output OUTPUT]
+usage: postleaks [-h] -k KEYWORD [--extend-workspaces] [--strict] [--include INCLUDE] [--exclude EXCLUDE] [--raw] [--output OUTPUT]
 
 Postleaks 🚀💧 Search for sensitive data in Postman public library.
 
 options:
   -h, --help           show this help message and exit
   -k KEYWORD           Keyword (Domain, company, etc.)
-  --extend-workspaces  Extend search to Postman workspaces linked to found requests (Warning: request consuming and risk of false positive)
+  --extend-workspaces  Extend search to Postman workspaces linked to found requests (warning: request consuming and risk of false positive)
+  --strict             Only include results where keywords are in the URL (warning: could miss some results where the final URL is a variable)
   --include INCLUDE    URL should match this string
   --exclude EXCLUDE    URL should not match this string
   --raw                Display raw filtered results as JSON
