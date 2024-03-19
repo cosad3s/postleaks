@@ -101,7 +101,7 @@ def display(request_info:any, raw:bool):
 def search_request_info_for_request_ids(ids: set, include_match:str, exclude_match:str, raw: bool, strict: bool, keyword:str, output: str):
     print(BLUE+"[*] Search for requests info in collection of requests"+NOCOLOR)
 
-    os.makedirs(output)
+    os.makedirs(output, exist_ok=True)
 
     GET_REQUEST_ENDPOINT="/_api/request/"
 
