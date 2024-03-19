@@ -8,6 +8,7 @@ import math
 import json
 import os
 from datetime import datetime
+import time
 import whispers
 
 POSTMAN_HOST = "https://www.postman.com"
@@ -169,6 +170,10 @@ def search_request_ids_for_workspaces_id(ids: set):
     session = requests.Session()
     for id in ids:
         response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
+        if (response.status_code == 429):
+            fail("Rate-limiting reached. Wait for 60 seconds before continuing ...", False)
+            time.sleep(60)
+            response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
         if (response.status_code != 200):
             fail("Error in [search_request_ids_for_workspaces_id] on returned results from Postman.com.")
         new_request_ids = parse_search_requests_from_workspace_response(response)
