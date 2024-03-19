@@ -171,11 +171,12 @@ def search_request_ids_for_workspaces_id(ids: set):
     for id in ids:
         response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
         if (response.status_code == 429):
-            fail("Rate-limiting reached. Wait for 60 seconds before continuing ...", False)
+            fail("Rate-limiting reached. Wait for 60 seconds before continuing ...")
             time.sleep(60)
             response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
         if (response.status_code != 200):
             fail("Error in [search_request_ids_for_workspaces_id] on returned results from Postman.com.")
+            continue
         new_request_ids = parse_search_requests_from_workspace_response(response)
         if new_request_ids is not None:
             request_ids = request_ids.union(new_request_ids)
@@ -207,7 +208,7 @@ def search_requests_ids(keyword: str):
     session = requests.Session()
     response = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, 0, MAX_SEARCH_RESULTS))
     if (response.status_code != 200):
-        fail("Error in [search_requests_ids] on returned results from Postman.com.")
+        fail("Error in [search_requests_ids] on returned results from Postman.com.", True)
     count = response.json()["meta"]["total"]["request"]
     
     ids = parse_search_response(response)
@@ -222,6 +223,7 @@ def search_requests_ids(keyword: str):
             r = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, offset, MAX_SEARCH_RESULTS))
             if (r.status_code != 200):
                 fail("Error in [search_requests_ids](loop) on returned results from Postman.com.")
+                continue
             parsed = parse_search_response(r)
             ids.extend(parsed)
     return ids
@@ -231,7 +233,7 @@ def parse_search_response(search_response):
     json = search_response.json()
     
     if "data" not in json:
-        fail("No data found")
+        fail("No data found", True)
     
     data = json["data"]
 
