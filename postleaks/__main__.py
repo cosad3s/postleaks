@@ -155,7 +155,7 @@ def identify_secrets(file_path: any):
 
 def store(request_info: any, output: str):
     file_path = output + "/" + request_info["id"] + ".json"
-    json_string = json.dumps(request_info)
+    json_string = json.dumps(request_info, indent=2)
     with open(file_path, 'w') as file:
         file.write(json_string)
     return file_path
