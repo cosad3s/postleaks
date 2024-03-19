@@ -9,6 +9,7 @@ import json
 import os
 from datetime import datetime
 import time
+import platform
 import whispers
 
 POSTMAN_HOST = "https://www.postman.com"
@@ -147,6 +148,8 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
 
 def identify_secrets(file_path: any):
     config_path = os.path.join(os.path.dirname(__file__), 'config.yml')
+    if (platform.system() == 'Windows'):
+        config_path = config_path.replace("\\","\\\\")
     secrets_raw = list(whispers.secrets(f"-c {config_path} {file_path}"))
     if (len(secrets_raw) > 0):
         secrets=list(set(s.key+" = "+s.value for s in secrets_raw))
