@@ -264,9 +264,10 @@ def format_search_request_body(keyword: str, offset: int, size: int):
             }
         }
 
-def fail(msg):
+def fail(msg, exit=False):
     print(ORANGE+"[-] Error: "+msg+NOCOLOR)
-    sys.exit()
+    if exit:
+        sys.exit()
 
 if __name__ == '__main__':
     main()
