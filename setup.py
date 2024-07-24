@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from os import path
 import io
 
-VERSION = '1.1.4' 
+VERSION = '1.1.5' 
 DESCRIPTION = 'Postleaks'
 
 pwd = path.abspath(path.dirname(__file__))
@@ -25,7 +25,7 @@ setup(
     package_data={
         '': ['config.yml'],
     },
-    install_requires=["requests", "argparse", "whispers"],
+    install_requires=["requests", "argparse", "whispers>=2.2.1"],
     url="https://github.com/cosad3s/postleaks",
     keywords=['leaks', 'postman', 'osint', 'bugbounty'],
     entry_points={
