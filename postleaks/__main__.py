@@ -55,6 +55,7 @@ def main():
         output_folder = DEFAULT_OUTPUT_FOLDERNAME + timestamp_str;
 
     for keyword in keywords:
+        print(BLUE+"[*] Searching for leaks related to keyword "+keyword+NOCOLOR)
         request_infos = search(keyword, args.include, args.exclude, args.extend_workspaces, args.raw, args.strict, output_folder)
         print(BLUE+"\n[*] "+str(len(request_infos))+" results found for keyword '"+keyword+"'. Happy (ethical) hacking!"+NOCOLOR)
 
