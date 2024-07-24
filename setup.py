@@ -25,7 +25,7 @@ setup(
     package_data={
         '': ['config.yml'],
     },
-    install_requires=["requests", "argparse", "whispers"],
+    install_requires=["requests", "argparse", "whispers>=2.2.1"],
     url="https://github.com/cosad3s/postleaks",
     keywords=['leaks', 'postman', 'osint', 'bugbounty'],
     entry_points={
