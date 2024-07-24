@@ -26,7 +26,8 @@ NOCOLOR='\033[0m'
 
 def main():
     parser = argparse.ArgumentParser(description=BOLD+'Postleaks 🚀💧'+NOCOLOR+" Search for sensitive data in Postman public library.")
-    parser.add_argument('-k', type=str, required=True, dest='keyword', help = "Keyword (Domain, company, etc.)")
+    parser.add_argument('-k', type=str, required=False, dest='keyword', help = "Keyword (Domain, company, etc.)")
+    parser.add_argument('-kf', type=str, required=False, dest='keyword_file', help="File containing keywords (one per line)")
     parser.add_argument('--extend-workspaces', action="store_true", default=False, required=False, dest='extend_workspaces', help = "Extend search to Postman workspaces linked to found requests (warning: request consuming and risk of false positive)")
     parser.add_argument('--strict', action="store_true", default=False, required=False, dest='strict', help = "Only include results where keywords are in the URL (warning: could miss some results where the final URL is a variable)")
     parser.add_argument('--include', type=str, required=False, dest='include', help = "URL should match this string")
@@ -34,6 +35,16 @@ def main():
     parser.add_argument('--raw', action="store_true", default=False, required=False, dest='raw', help = "Display raw filtered results as JSON")
     parser.add_argument('--output', type=str, required=False, dest='output', help = "Store JSON in specific output folder (Default: results_<TIMESTAMP>)")
     args = parser.parse_args()
+
+    if not args.keyword and not args.keyword_file:
+        parser.error("At least one of '-k' or '-kf' is required.")
+
+    keywords = []
+    if args.keyword:
+        keywords.append(args.keyword)
+    if args.keyword_file:
+        with open(args.keyword_file, 'r') as f:
+            keywords.extend([line.strip() for line in f.readlines()])
 
     output_folder = ""
     if args.output and len(args.output.strip()) >0:
@@ -43,11 +54,11 @@ def main():
         timestamp_str = str(int(timestamp))
         output_folder = DEFAULT_OUTPUT_FOLDERNAME + timestamp_str;
 
-    request_infos = search(args.keyword, args.include, args.exclude, args.extend_workspaces, args.raw, args.strict, output_folder)
-    print(BLUE+"\n[*] "+str(len(request_infos))+" results founds. Happy (ethical) hacking!"+NOCOLOR)
-    
+    for keyword in keywords:
+        request_infos = search(keyword, args.include, args.exclude, args.extend_workspaces, args.raw, args.strict, output_folder)
+        print(BLUE+"\n[*] "+str(len(request_infos))+" results found for keyword '"+keyword+"'. Happy (ethical) hacking!"+NOCOLOR)
+
 def search(keyword: str, include_match:str, exclude_match:str, extend_workspaces: bool, raw: bool, strict: bool, output: str):
- 
     print(BLUE+"[*] Looking for data in Postman.com")
     ids = search_requests_ids(keyword)
 
