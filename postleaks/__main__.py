@@ -214,8 +214,8 @@ def parse_search_requests_from_workspace_response(list_collection_response):
 def search_requests_ids(keyword: str):
     print(BLUE+"[*] Searching for requests IDs"+NOCOLOR)
 
-    # https://www.postman.com/_api/ws/proxy limitation on results (<= 100)
-    MAX_SEARCH_RESULTS = 100
+    # https://www.postman.com/_api/ws/proxy limitation on results (<= 25)
+    MAX_SEARCH_RESULTS = 25
     # https://www.postman.com/_api/ws/proxy limitation on offset (<= 200)
     MAX_OFFSET = 200
     GLOBAL_SEARCH_ENDPOINT="/_api/ws/proxy"

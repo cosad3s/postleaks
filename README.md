@@ -48,7 +48,8 @@ options:
 
 ## Limitations
 
-**Postman.com is limiting the results to 300 items (page size of 100 / offset of 200).**
+**~~02/2024: Postman.com is limiting the results to 300 items (page size of 100 / offset of 200).~~**  
+**12/2024: Postman.com is limiting the results to 225 items (page size of 25 / offset of 200).**
 
 ## Notes
 
