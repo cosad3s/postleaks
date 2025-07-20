@@ -12,11 +12,15 @@ import time
 import platform
 import whispers
 
+# Requests configuration
 POSTMAN_HOST = "https://www.postman.com"
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+HEADERS = {"User-Agent" : USER_AGENT}
 
 REQUEST_INFO_INTERESTING_DATA = ["id", "url", "method", "auth", "queryParams", "description", "name", "events", "data", "headerData"]
 DEFAULT_OUTPUT_FOLDERNAME="results_"
 
+# Colors
 ORANGE='\033[0;35m'
 GREEN='\033[92m'
 BLUE='\033[94m'
@@ -123,7 +127,7 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
 
     session = requests.Session()
     for id in ids:
-        response = session.get(POSTMAN_HOST+GET_REQUEST_ENDPOINT+str(id))
+        response = session.get(POSTMAN_HOST+GET_REQUEST_ENDPOINT+str(id), headers=HEADERS)
         if (response.status_code != 200):
             # Request details not found - Skip
             continue
@@ -184,11 +188,11 @@ def search_request_ids_for_workspaces_id(ids: set):
 
     session = requests.Session()
     for id in ids:
-        response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
+        response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id), headers=HEADERS)
         if (response.status_code == 429):
             fail("Rate-limiting reached. Wait for 60 seconds before continuing ...")
             time.sleep(60)
-            response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id))
+            response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id), headers=HEADERS)
         if (response.status_code != 200):
             fail("Error in [search_request_ids_for_workspaces_id] on returned results from Postman.com.")
             continue
@@ -221,7 +225,7 @@ def search_requests_ids(keyword: str):
     GLOBAL_SEARCH_ENDPOINT="/_api/ws/proxy"
 
     session = requests.Session()
-    response = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, 0, MAX_SEARCH_RESULTS))
+    response = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, 0, MAX_SEARCH_RESULTS), headers=HEADERS)
     if (response.status_code != 200):
         fail("Error in [search_requests_ids] on returned results from Postman.com.", True)
     count = response.json()["meta"]["total"]["request"]
@@ -235,7 +239,7 @@ def search_requests_ids(keyword: str):
             
             if offset > MAX_OFFSET:
                 break
-            r = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, offset, MAX_SEARCH_RESULTS))
+            r = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, offset, MAX_SEARCH_RESULTS), headers=HEADERS)
             if (r.status_code != 200):
                 fail("Error in [search_requests_ids](loop) on returned results from Postman.com.")
                 continue
