@@ -97,23 +97,23 @@ def display(request_info:any, raw:bool):
         if request_info["headerData"] is not None and len(request_info["headerData"]) != 0:
             print("\n - Headers: ", end='')
             for d in request_info["headerData"]:
-                print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
+                print("[" + repr(d["key"]) + "=" + repr(d["value"]) + "]", end='')
 
         if request_info["data"] is not None and len(request_info["data"]) != 0:
             print("\n - Misc. data items: ", end='')
             for data in request_info["data"]:
                 if isinstance(data,dict):
-                    print("[" + data['key'] + "=" + repr(data['value']) + "]", end='')
+                    print("[" + repr(data['key']) + "=" + repr(data['value']) + "]", end='')
                 elif data.startswith("["):
                     tmp = json.loads(data)
                     for d in tmp:
-                        if len(d['key']) != 0:
-                            print("[" + d['key'] + "=" + repr(d['value']) + "]", end='')
+                        if d['key'] is not None and len(d['key']) != 0:
+                            print("[" + repr(d['key']) + "=" + repr(d['value']) + "]", end='')
         
         if request_info["queryParams"] is not None and len(request_info["queryParams"]) != 0:
             print("\n - Query parameters: ", end='')
             for d in request_info["queryParams"]:
-                print("[" + d["key"] + "=" + repr(d["value"]) + "]", end='')
+                print("[" + repr(d["key"]) + "=" + repr(d["value"]) + "]", end='')
     print(NOCOLOR)
 
 def search_request_info_for_request_ids(ids: set, include_match:str, exclude_match:str, raw: bool, strict: bool, keyword:str, output: str):
