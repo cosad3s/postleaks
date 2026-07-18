@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from os import path
 import io
 
-VERSION = '1.1.8' 
+VERSION = '1.1.9' 
 DESCRIPTION = 'Postleaks'
 
 pwd = path.abspath(path.dirname(__file__))

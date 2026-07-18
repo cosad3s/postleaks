@@ -20,11 +20,15 @@ HEADERS = {"User-Agent" : USER_AGENT}
 REQUEST_INFO_INTERESTING_DATA = ["id", "url", "method", "auth", "queryParams", "description", "name", "events", "data", "headerData"]
 DEFAULT_OUTPUT_FOLDERNAME="results_"
 
+# Debug flag (toggled with --debug), used by debug_http() to dump HTTP traffic
+DEBUG = False
+
 # Colors
 ORANGE='\033[0;35m'
 GREEN='\033[92m'
 BLUE='\033[94m'
 YELLOW='\033[33m'
+CYAN='\033[96m'
 BOLD='\033[1m'
 NOCOLOR='\033[0m'
 
@@ -38,7 +42,11 @@ def main():
     parser.add_argument('--exclude', type=str, required=False, dest='exclude', help = "URL should not match this string")
     parser.add_argument('--raw', action="store_true", default=False, required=False, dest='raw', help = "Display raw filtered results as JSON")
     parser.add_argument('--output', type=str, required=False, dest='output', help = "Store JSON in specific output folder (Default: results_<TIMESTAMP>)")
+    parser.add_argument('--debug', action="store_true", default=False, required=False, dest='debug', help = "Display HTTP debug info (sent/received headers, request body/params, full responses)")
     args = parser.parse_args()
+
+    global DEBUG
+    DEBUG = args.debug
 
     if not args.keyword and not args.keyword_file:
         parser.error("At least one of '-k' or '-kf' is required.")
@@ -128,6 +136,7 @@ def search_request_info_for_request_ids(ids: set, include_match:str, exclude_mat
     session = requests.Session()
     for id in ids:
         response = session.get(POSTMAN_HOST+GET_REQUEST_ENDPOINT+str(id), headers=HEADERS)
+        debug_http(response)
         if (response.status_code != 200):
             # Request details not found - Skip
             continue
@@ -189,10 +198,12 @@ def search_request_ids_for_workspaces_id(ids: set):
     session = requests.Session()
     for id in ids:
         response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id), headers=HEADERS)
+        debug_http(response)
         if (response.status_code == 429):
             fail("Rate-limiting reached. Wait for 60 seconds before continuing ...")
             time.sleep(60)
             response = session.post(POSTMAN_HOST+LIST_COLLECTION_ENDPOINT+"?workspace="+str(id), headers=HEADERS)
+            debug_http(response)
         if (response.status_code != 200):
             fail("Error in [search_request_ids_for_workspaces_id] on returned results from Postman.com.")
             continue
@@ -226,6 +237,7 @@ def search_requests_ids(keyword: str):
 
     session = requests.Session()
     response = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, 0, MAX_SEARCH_RESULTS), headers=HEADERS)
+    debug_http(response)
     if (response.status_code != 200):
         fail("Error in [search_requests_ids] on returned results from Postman.com.", True)
     count = response.json()["meta"]["total"]["request"]
@@ -240,6 +252,7 @@ def search_requests_ids(keyword: str):
             if offset > MAX_OFFSET:
                 break
             r = session.post(POSTMAN_HOST+GLOBAL_SEARCH_ENDPOINT, json=format_search_request_body(keyword, offset, MAX_SEARCH_RESULTS), headers=HEADERS)
+            debug_http(r)
             if (r.status_code != 200):
                 fail("Error in [search_requests_ids](loop) on returned results from Postman.com.")
                 continue
@@ -289,6 +302,36 @@ def format_search_request_body(keyword: str, offset: int, size: int):
             "nonNestedRequests":"true"
             }
         }
+
+def debug_http(response: requests.Response):
+    # Dump the full HTTP exchange (request + response) when --debug is enabled
+    if not DEBUG:
+        return
+
+    req = response.request
+
+    print(CYAN+"\n"+"="*70)
+    print(BOLD+"[DEBUG] >>> REQUEST SENT"+NOCOLOR+CYAN)
+    print(" "+str(req.method)+" "+str(req.url))
+    print(" Headers sent:")
+    for key, value in req.headers.items():
+        print("   "+str(key)+": "+str(value))
+    if req.body is not None:
+        body = req.body
+        if isinstance(body, bytes):
+            body = body.decode("utf-8", errors="replace")
+        print(" Body / parameters sent:")
+        print("   "+str(body))
+
+    print(BOLD+"[DEBUG] <<< RESPONSE RECEIVED"+NOCOLOR+CYAN)
+    print(" Status: "+str(response.status_code)+" "+str(response.reason))
+    print(" Elapsed: "+str(response.elapsed))
+    print(" Headers received:")
+    for key, value in response.headers.items():
+        print("   "+str(key)+": "+str(value))
+    print(" Body received:")
+    print("   "+response.text)
+    print("="*70+"\n"+NOCOLOR)
 
 def fail(msg, exit=False):
     print(ORANGE+"[-] Error: "+msg+NOCOLOR)
